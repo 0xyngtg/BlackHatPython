@@ -7,14 +7,14 @@ from dataclasses import dataclass
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s', level=logging.INFO)
 logger = logging.getLogger()
 
-def arguments() -> argparse.Namespace:
+def arguments() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='tcp_proxy')
     parser.add_argument('-lh', required= True, type=str, help='Local host')
     parser.add_argument('-lp', required= True, type=int, help='Local port')
     parser.add_argument('-rh', required= True, type=str, help='Remote host')
     parser.add_argument('-rp', required= True, type=int, help='Remote port')
     parser.add_argument('--receive', action='store_true', help='Receive first')
-    return parser.parse_args()
+    return parser
 
 HEX_FILTER = ''.join(
     [(len(repr(chr(i))) == 3) and chr(i) or '.' for i in range(256)]
@@ -60,7 +60,7 @@ class Proxy:
         try:
             server_socket : socket.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
             server_socket.bind((self.server))
-            logger.info(f'Listening on {self.server[0]}{self.server[1]}')
+            logger.info(f'Listening on {self.server[0]}:{self.server[1]}')
             return server_socket
         except Exception as e:
             logger.error(f'Problem on bind: {e}\n [X] Failed to listen on {self.server[0]}{self.server[1]} - Check for other listening sockets or correct permissions.')
@@ -99,7 +99,7 @@ class Proxy:
             remote_buffer = receive_from(remote_socket)
 
             if len(remote_buffer):
-                logger.info(f'[<==] Received {len(remote_buffer)} from remote.')
+                logger.info(f'[<==] Received {len(remote_buffer)} bytes from remote.')
                 hexdump(remote_buffer)
                 remote_buffer = self.response_handler(remote_buffer)
                 client_socket.send(remote_buffer)
@@ -116,7 +116,7 @@ class Proxy:
 
         while True:
             client_socket, addr = server_socket.accept()
-            logger.info(f'[+] Received incoming connection from {addr[0]}{addr[1]}')
+            logger.info(f'Received incoming connection from {addr[0]}{addr[1]}')
 
             proxy_thread = threading.Thread(
                 target=self.main_handler,
@@ -127,7 +127,13 @@ class Proxy:
 
 
 def main() -> None:
-    args : argparse.Namespace = arguments()
+    parser : argparse.ArgumentParser = arguments()
+    #args : argparse.Namespace = parser.parse_args()
+
+    ###test
+    test_args=['-lh', '127.0.0.1', '-lp', '9001', '-rh', '127.0.0.1', '-rp', '9002', '--receive']
+    args = parser.parse_args(test_args)
+    ###
 
     proxy = Proxy(
         server = (args.lh, args.lp),
@@ -142,13 +148,3 @@ def main() -> None:
 
 if __name__ == '__main__':
     main()
-
-def test():
-    print(repr(chr(65)))
-    print(repr(chr(9999)))
-    print([(len(repr(chr(i))) == 3) and chr(i) or '.' for i in range(256)])
-    print(f'{ord('A')}')
-    print(f'{33:04X}')
-    hexdump('python rocks\n and proxies roll\n')
-
-test()

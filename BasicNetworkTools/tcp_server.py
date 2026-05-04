@@ -2,7 +2,7 @@ import socket
 import threading
 
 IP = '0.0.0.0'
-PORT = 9998
+PORT = 9002
 
 def tcp_server(ip : str, port : int) -> None:
     server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -1,7 +1,7 @@
 import socket
 
 TARGET_HOST : str = '127.0.0.1'
-TARGET_PORT : int = 9998
+TARGET_PORT : int = 9001
 
 def tcp_client(host : str, port : int) -> str | None:
     #creating a socket object
