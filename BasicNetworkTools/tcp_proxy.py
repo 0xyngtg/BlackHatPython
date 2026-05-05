@@ -2,7 +2,6 @@ import argparse
 import logging
 import socket
 import threading
-from dataclasses import dataclass
 
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s', level=logging.INFO)
 logger = logging.getLogger()
@@ -50,11 +49,11 @@ def receive_from(connection) -> bytes:
         pass
     return buffer
 
-@dataclass
 class Proxy:
-    server : tuple[str, int]
-    remote : tuple[str, int]
-    receive_first : bool = False
+    def __init__(self, server:tuple[str, int], remote:tuple[str, int], receive_first:bool=False):
+        self.server = server
+        self.remote = remote
+        self.receive_first = receive_first
 
     def server_connection(self) -> socket.socket:
         try:
