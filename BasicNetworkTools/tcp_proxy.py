@@ -8,10 +8,10 @@ logger = logging.getLogger()
 
 def arguments() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(prog='tcp_proxy')
-    parser.add_argument('-lh', required= True, type=str, help='Local host')
-    parser.add_argument('-lp', required= True, type=int, help='Local port')
-    parser.add_argument('-rh', required= True, type=str, help='Remote host')
-    parser.add_argument('-rp', required= True, type=int, help='Remote port')
+    parser.add_argument('-lh', required=True, type=str, help='Local host')
+    parser.add_argument('-lp', required=True, type=int, help='Local port')
+    parser.add_argument('-rh', required=True, type=str, help='Remote host')
+    parser.add_argument('-rp', required=True, type=int, help='Remote port')
     parser.add_argument('--receive', action='store_true', help='Receive first')
     return parser
 

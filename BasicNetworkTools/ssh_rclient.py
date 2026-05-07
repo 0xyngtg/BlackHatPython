@@ -7,7 +7,7 @@ import paramiko
 logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s', level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def ssh_command(ip:str, port:str, user:str, passwd:str, message:bytes):
+def ssh_command(ip:str, port:str, user:str, passwd:str, message:bytes) -> None:
     client : paramiko.SSHClient = paramiko.SSHClient()
     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
     client.connect(ip, port=int(port), username=user, password=passwd)
@@ -32,10 +32,10 @@ def ssh_command(ip:str, port:str, user:str, passwd:str, message:bytes):
 
 def main() -> None:
     import getpass
-    user = input('Enter user: ')
-    passwd = getpass.getpass()
-    ip = input('Enter server IP: ')
-    port = input('Enter port: ')
+    user : str = input('Enter user: ')
+    passwd : str = getpass.getpass()
+    ip : str = input('Enter server IP: ')
+    port : str = input('Enter port: ')
     ssh_command(ip, port, user, passwd, b'ClientConnected')
 
 
