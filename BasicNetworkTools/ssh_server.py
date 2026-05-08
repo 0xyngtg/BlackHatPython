@@ -66,7 +66,7 @@ class Server(paramiko.ServerInterface):
             logger.error(f'Error: {str(e)}')
 
 def main() -> None:
-    server = Server(ip='127.0.0.1', port=9001)
+    server = Server(ip='127.0.0.1', port=2222)
     server.set_server()
 
 if __name__ == '__main__':
