@@ -1,4 +1,5 @@
 import collections
+import logging
 import os
 import re
 import sys
@@ -10,6 +11,9 @@ from scapy.all import TCP, rdpcap
 OUTDIR : Path = Path('/root/Desktop/pictures')
 PCAPS : Path = Path('/root/Downloads')
 
+logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 Response = collections.namedtuple('Response',
     [
         'header',
@@ -20,9 +24,8 @@ def get_header(raw_response:bytes) -> dict[str, str] | None:
     try:
         header_raw : bytes = raw_response[:raw_response.index(b'\r\n\r\n')+2]
     except ValueError:
-       sys.stdout.write('-')
-       sys.stdout.flush()
-       return None
+        logging.error('Unexpected error reading HTTP header.')
+        return None
 
     header : dict[str, str] = dict(re.findall(r'(?P<name>.*?): (?P<value>.*?)\r\n', header_raw.decode()))
     if 'Content-Type' not in header:
@@ -56,9 +59,8 @@ class Recapper:
                 try:
                     if packet[TCP].dport == 80 or packet[TCP].sport == 80:
                         payload += bytes(packet[TCP].payload)
-                except IndexError:
-                    sys.stdout.write('x')
-                    sys.stdout.flush()
+                except IndexError as e:
+                    logger.error(f'Unexpected error reading responses: {e}')
             if payload:
                 header = get_header(raw_response=payload)
                 if header is None:
@@ -70,7 +72,7 @@ class Recapper:
             content, content_type = extract_content(response, content_name)
             if content and content_type:
                 fname : Path = OUTDIR / f'ex_{i}.{content_type}'
-                print(f'Writing {fname}')
+                logger.info(f'Writing {fname}')
                 with open(fname, 'wb') as f:
                     f.write(content)
 
