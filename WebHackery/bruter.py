@@ -21,7 +21,7 @@ def filter_status(response:requests.Response, path:str, config:Config) -> bool|N
     if response.status_code != 404:
         if config.recursive:
             if response.status_code == 200 and path.endswith('/'):
-                extend_wordlist(wordlist=config.wordlist, extensions=config.extensions, dir=f'{path}')
+                extend_wordlist(wordlist=config.wordlist, extensions=config.extensions, dir=f'{path[1:]}')
         return True
     else:
         return False
@@ -73,7 +73,7 @@ def main() -> None:
         user_agent='Mozilla/5.0 (X11; Linux x86_64; rv:19.0) Gecko/20100101 Firefox/19.0',
         extensions=['.php', '.bak', '.inc', '.orig'],
         threads=50,
-        wordlist=Path('C:/Users/Asus/Desktop/ZedProjects/BlackHatPython/WebHackery/test.txt'),
+        wordlist=Path('test.txt'),
         target='http://127.0.0.1:8081',
         recursive= True
     )
