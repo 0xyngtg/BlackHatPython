@@ -37,9 +37,8 @@ def queuer(words_queue:queue.Queue, word:str, extensions:list[str]) -> None:
 def extend_wordlist(wordlist:Path, extensions:list[str], dir:str='') -> queue.Queue:
     with open(wordlist, 'r') as wl:
         words: str = wl.read()
-        words_list: list[str] = words.split()
 
-        for word in words_list:
+        for word in words.split():
             if dir:
                 word : str = dir + word
             queuer(words_queue, word, extensions)
@@ -72,7 +71,7 @@ def main() -> None:
     config: Config = Config(
         user_agent='Mozilla/5.0 (X11; Linux x86_64; rv:19.0) Gecko/20100101 Firefox/19.0',
         extensions=['.php', '.bak', '.inc', '.orig'],
-        threads=50,
+        threads=5,
         wordlist=Path('test.txt'),
         target='http://127.0.0.1:8081',
         recursive= True
